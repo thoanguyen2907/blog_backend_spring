@@ -8,6 +8,7 @@ import com.myblogbackend.blog.repositories.CategoryRepository;
 import com.myblogbackend.blog.repositories.PostRepository;
 import com.myblogbackend.blog.repositories.UsersRepository;
 import com.myblogbackend.blog.request.PostRequest;
+import com.myblogbackend.blog.security.JwtProvider;
 import com.myblogbackend.blog.security.UserPrincipal;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -43,6 +44,9 @@ public class PostApiDelegateImplTest {
     private UsersRepository userRepository;
     @MockBean
     private PostRepository postRepository;
+    @MockBean
+    private JwtProvider jwtProvider;
+
     @Test
     public void testCreatePost() throws Exception {
         // Mock the Authentication object
@@ -54,7 +58,8 @@ public class PostApiDelegateImplTest {
 
         // Set the mock Authentication object in the SecurityContextHolder
         SecurityContextHolder.getContext().setAuthentication(authentication);
-
+        //create jwt token by authentication
+        var token = jwtProvider.generateJwtToken(authentication);
         // Mock the category repository
         UUID categoryId = UUID.randomUUID();
         CategoryEntity category = new CategoryEntity();
@@ -74,7 +79,7 @@ public class PostApiDelegateImplTest {
         Mockito.when(postRepository.save(Mockito.any(PostEntity.class))).thenReturn(createdPost);
 
         mockMvc.perform(MockMvcRequestBuilders.post("/api/v1/posts")
-                        .header("Authorization", "Bearer .eyJzdWIiOiJmb29AZW1haWwuY29tIiwiZXhwIjoxNjM4ODU1MzA1LCJpYXQiOjE2Mzg4MTkzMDV9.")
+                        .header("Authorization", "Bearer " + token)
                         .content(IntegrationTestUtil.asJsonString(postRequest))
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
